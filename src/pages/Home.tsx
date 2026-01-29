@@ -27,25 +27,52 @@ import { genUserName } from '@/lib/genUserName';
 import { ZapButton } from '@/components/ZapButton';
 import { ComposeDialog } from '@/components/ComposeDialog';
 import { ReplyDialog } from '@/components/ReplyDialog';
+import { QuotePostDialog } from '@/components/QuotePostDialog';
+import { MobileNav } from '@/components/MobileNav';
 import { nip19 } from 'nostr-tools';
 
 type FeedType = 'following' | 'global' | 'trending';
 
-// Post component to display a single Nostr event
-function Post({ event }: { event: NostrEvent }) {
+// Post component to display a single Nostr event  
+function Post({ event: rawEvent }: { event: NostrEvent }) {
   const navigate = useNavigate();
   const { user } = useCurrentUser();
-  const author = useAuthor(event.pubkey);
-  const authorMetadata = author.data?.metadata;
   const { mutate: publishEvent } = useNostrPublish();
   const { toast } = useToast();
   const [isLiked, setIsLiked] = useState(false);
   const [isReposted, setIsReposted] = useState(false);
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
+  const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
+  const [repostMenuOpen, setRepostMenuOpen] = useState(false);
 
-  const handleProfileClick = () => {
+  // Check if this is a repost (kind 6)
+  const isRepost = rawEvent.kind === 6;
+  let repostedEvent: NostrEvent | null = null;
+  let reposter = useAuthor(rawEvent.pubkey);
+  
+  if (isRepost) {
+    try {
+      repostedEvent = JSON.parse(rawEvent.content);
+    } catch (e) {
+      console.error('Failed to parse repost:', e);
+    }
+  }
+
+  // Use the reposted event if it exists, otherwise use the original event
+  const event = repostedEvent || rawEvent;
+  const author = useAuthor(event.pubkey);
+  const authorMetadata = author.data?.metadata;
+  const reposterMetadata = reposter.data?.metadata;
+
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
     const npub = nip19.npubEncode(event.pubkey);
     navigate(`/profile/${npub}`);
+  };
+
+  const handlePostClick = () => {
+    const noteId = nip19.noteEncode(event.id);
+    navigate(`/thread/${noteId}`);
   };
 
   // Format relative time
@@ -60,7 +87,8 @@ function Post({ event }: { event: NostrEvent }) {
   };
 
   // Handle reply
-  const handleReply = () => {
+  const handleReply = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!user) {
       toast({ title: 'Please log in to reply', variant: 'destructive' });
       return;
@@ -68,12 +96,9 @@ function Post({ event }: { event: NostrEvent }) {
     setReplyDialogOpen(true);
   };
 
-  // Handle repost (NIP-18 kind 6)
-  const handleRepost = () => {
-    if (!user) {
-      toast({ title: 'Please log in to repost', variant: 'destructive' });
-      return;
-    }
+  // Handle simple repost (NIP-18 kind 6)
+  const handleSimpleRepost = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (isReposted) return;
 
     publishEvent(
@@ -88,14 +113,32 @@ function Post({ event }: { event: NostrEvent }) {
       {
         onSuccess: () => {
           setIsReposted(true);
+          setRepostMenuOpen(false);
           toast({ title: '🌊 Reposted!' });
         },
       }
     );
   };
 
+  // Handle quote post
+  const handleQuotePost = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setRepostMenuOpen(false);
+    setQuoteDialogOpen(true);
+  };
+
+  const handleRepostClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!user) {
+      toast({ title: 'Please log in to repost', variant: 'destructive' });
+      return;
+    }
+    setRepostMenuOpen(!repostMenuOpen);
+  };
+
   // Handle like (NIP-25 kind 7 reaction)
-  const handleLike = () => {
+  const handleLike = (e: React.MouseEvent) => {
+    e.stopPropagation();
     if (!user) {
       toast({ title: 'Please log in to like', variant: 'destructive' });
       return;
@@ -123,85 +166,120 @@ function Post({ event }: { event: NostrEvent }) {
   return (
     <>
       <ReplyDialog event={event} open={replyDialogOpen} onOpenChange={setReplyDialogOpen} />
-      <Card className="border-primary/10 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300 group overflow-hidden">
-      <CardHeader className="pb-3">
-        <div className="flex items-start gap-3">
-          <Avatar 
-            className="w-12 h-12 ring-2 ring-primary/20 ring-offset-2 ring-offset-background transition-all duration-300 group-hover:ring-primary/40 cursor-pointer"
-            onClick={handleProfileClick}
-          >
-            <AvatarImage src={authorMetadata?.picture} />
-            <AvatarFallback className="bg-gradient-to-br from-primary/30 to-accent/30 text-primary font-semibold">
-              {(authorMetadata?.name || genUserName(event.pubkey)).charAt(0).toUpperCase()}
-            </AvatarFallback>
-          </Avatar>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-2">
-              <span 
-                className="font-bold truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text cursor-pointer hover:text-primary transition-colors"
-                onClick={handleProfileClick}
-              >
-                {authorMetadata?.name || genUserName(event.pubkey)}
-              </span>
-              <span className="text-xs text-muted-foreground font-medium">
-                {getRelativeTime(event.created_at)}
-              </span>
-            </div>
-            <p className="text-xs text-muted-foreground/80 truncate font-mono">
-              {event.pubkey.slice(0, 8)}...{event.pubkey.slice(-4)}
-            </p>
+      <QuotePostDialog event={event} open={quoteDialogOpen} onOpenChange={setQuoteDialogOpen} />
+      <Card 
+        className="border-primary/10 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300 group overflow-hidden cursor-pointer"
+        onClick={handlePostClick}
+      >
+        {isRepost && (
+          <div className="px-6 pt-3 flex items-center gap-2 text-sm text-muted-foreground">
+            <Repeat2 className="w-4 h-4" />
+            <span className="font-medium">
+              {reposterMetadata?.name || genUserName(rawEvent.pubkey)} reposted
+            </span>
           </div>
-        </div>
-      </CardHeader>
+        )}
+        <CardHeader className={isRepost ? "pb-3 pt-2" : "pb-3"}>
+          <div className="flex items-start gap-3">
+            <Avatar 
+              className="w-12 h-12 ring-2 ring-primary/20 ring-offset-2 ring-offset-background transition-all duration-300 group-hover:ring-primary/40 cursor-pointer"
+              onClick={handleProfileClick}
+            >
+              <AvatarImage src={authorMetadata?.picture} />
+              <AvatarFallback className="bg-gradient-to-br from-primary/30 to-accent/30 text-primary font-semibold">
+                {(authorMetadata?.name || genUserName(event.pubkey)).charAt(0).toUpperCase()}
+              </AvatarFallback>
+            </Avatar>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center gap-2">
+                <span 
+                  className="font-bold truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text cursor-pointer hover:text-primary transition-colors"
+                  onClick={handleProfileClick}
+                >
+                  {authorMetadata?.name || genUserName(event.pubkey)}
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  {getRelativeTime(event.created_at)}
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground/80 truncate font-mono">
+                {event.pubkey.slice(0, 8)}...{event.pubkey.slice(-4)}
+              </p>
+            </div>
+          </div>
+        </CardHeader>
       <CardContent className="pt-0">
         <div className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words text-[15px]">
           <NoteContent event={event} />
         </div>
-        <div className="flex items-center gap-2 pt-4 border-t border-primary/10">
+        <div className="flex items-center gap-1.5 sm:gap-2 pt-4 border-t border-primary/10">
           {/* Reply Button */}
           <button 
             onClick={handleReply}
-            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 text-accent hover:text-accent transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border border-accent/20"
+            className="flex-1 flex items-center justify-center gap-1.5 sm:gap-2 h-10 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 text-accent hover:text-accent transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border border-accent/20"
           >
-            <MessageCircle className="w-5 h-5 group-hover/btn:scale-110 group-hover/btn:-rotate-12 transition-all duration-200" strokeWidth={2.5} />
-            <span className="text-sm font-bold">
+            <MessageCircle className="w-4 sm:w-5 h-4 sm:h-5 group-hover/btn:scale-110 transition-all" strokeWidth={2.5} />
+            <span className="text-xs sm:text-sm font-bold hidden xs:inline">
               {event.tags.filter(([t]) => t === 'e').length || 'Reply'}
+            </span>
+            <span className="text-xs sm:text-sm font-bold xs:hidden">
+              {event.tags.filter(([t]) => t === 'e').length || 0}
             </span>
           </button>
 
-          {/* Repost Button */}
-          <button 
-            onClick={handleRepost}
-            disabled={isReposted}
-            className={`flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border ${
-              isReposted 
-                ? 'bg-gradient-to-br from-accent/30 to-accent/20 text-accent cursor-not-allowed border-accent/30' 
-                : 'bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 text-accent hover:text-accent border-accent/20'
-            }`}
-          >
-            <Repeat2 className="w-5 h-5 group-hover/btn:rotate-180 transition-all duration-300" strokeWidth={2.5} />
-            <span className="text-sm font-bold">Repost</span>
-          </button>
+          {/* Repost/Quote Button */}
+          <DropdownMenu open={repostMenuOpen} onOpenChange={setRepostMenuOpen}>
+            <DropdownMenuTrigger asChild>
+              <button 
+                onClick={handleRepostClick}
+                disabled={isReposted}
+                className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 h-10 sm:h-11 rounded-xl sm:rounded-2xl transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border ${
+                  isReposted 
+                    ? 'bg-gradient-to-br from-accent/30 to-accent/20 text-accent cursor-not-allowed border-accent/30' 
+                    : 'bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 text-accent border-accent/20'
+                }`}
+              >
+                <Repeat2 className="w-4 sm:w-5 h-4 sm:h-5 group-hover/btn:rotate-180 transition-all duration-300" strokeWidth={2.5} />
+                <span className="text-xs sm:text-sm font-bold hidden xs:inline">Repost</span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent className="w-48 rounded-2xl border-primary/20 bg-background/95 backdrop-blur-xl">
+              <DropdownMenuItem 
+                onClick={handleSimpleRepost}
+                className="cursor-pointer rounded-xl font-semibold"
+              >
+                <Repeat2 className="w-4 h-4 mr-2" />
+                Repost
+              </DropdownMenuItem>
+              <DropdownMenuItem 
+                onClick={handleQuotePost}
+                className="cursor-pointer rounded-xl font-semibold"
+              >
+                <MessageCircle className="w-4 h-4 mr-2" />
+                Quote Post
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
 
           {/* Like Button */}
           <button 
             onClick={handleLike}
             disabled={isLiked}
-            className={`flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border ${
+            className={`flex-1 flex items-center justify-center gap-1.5 sm:gap-2 h-10 sm:h-11 rounded-xl sm:rounded-2xl transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border ${
               isLiked 
                 ? 'bg-gradient-to-br from-accent/30 to-accent/20 text-accent cursor-not-allowed border-accent/30' 
-                : 'bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 text-accent hover:text-accent border-accent/20'
+                : 'bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 text-accent border-accent/20'
             }`}
           >
-            <Heart className={`w-5 h-5 group-hover/btn:scale-125 transition-all duration-200 ${isLiked ? 'fill-current' : ''}`} strokeWidth={2.5} />
-            <span className="text-sm font-bold">Like</span>
+            <Heart className={`w-4 sm:w-5 h-4 sm:h-5 group-hover/btn:scale-125 transition-all ${isLiked ? 'fill-current' : ''}`} strokeWidth={2.5} />
+            <span className="text-xs sm:text-sm font-bold hidden xs:inline">Like</span>
           </button>
 
           {/* Zap Button */}
-          <div className="flex-1 flex items-center justify-center h-11 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] border border-accent/20">
+          <div className="flex-1 flex items-center justify-center h-10 sm:h-11 rounded-xl sm:rounded-2xl bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 transition-all shadow-sm hover:shadow-md hover:scale-[1.02] border border-accent/20">
             <ZapButton 
               target={event as any} 
-              className="flex items-center justify-center gap-2 text-accent hover:text-accent transition-colors duration-200 w-full h-full group/btn font-bold"
+              className="flex items-center justify-center gap-1.5 sm:gap-2 text-accent w-full h-full group/btn font-bold text-xs sm:text-sm"
               showCount={true}
             />
           </div>
@@ -243,8 +321,8 @@ const Home = () => {
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-accent/10 animate-gradient-shift" />
       </div>
 
-      {/* Navigation Sidebar */}
-      <aside className="fixed left-0 top-0 h-screen w-72 border-r border-primary/10 bg-background/80 backdrop-blur-xl p-6 flex flex-col gap-6">
+      {/* Navigation Sidebar - Hidden on mobile */}
+      <aside className="hidden lg:fixed lg:flex left-0 top-0 h-screen w-72 border-r border-primary/10 bg-background/80 backdrop-blur-xl p-6 flex-col gap-6">
         {/* Logo */}
         <div className="flex items-center gap-3 mb-4">
           <div className="relative">
@@ -265,15 +343,28 @@ const Home = () => {
             <HomeIcon className="w-5 h-5" />
             Home
           </Button>
-          <Button variant="ghost" className="justify-start gap-3 text-base h-12 hover:bg-primary/10">
+          <Button 
+            variant="ghost" 
+            className="justify-start gap-3 text-base h-12 hover:bg-primary/10"
+            onClick={() => navigate('/explore')}
+          >
             <Search className="w-5 h-5" />
             Explore
           </Button>
-          <Button variant="ghost" className="justify-start gap-3 text-base h-12 hover:bg-primary/10">
+          <Button 
+            variant="ghost" 
+            className="justify-start gap-3 text-base h-12 hover:bg-primary/10"
+            onClick={() => navigate('/notifications')}
+            disabled={!user}
+          >
             <Bell className="w-5 h-5" />
             Notifications
           </Button>
-          <Button variant="ghost" className="justify-start gap-3 text-base h-12 hover:bg-primary/10">
+          <Button 
+            variant="ghost" 
+            className="justify-start gap-3 text-base h-12 hover:bg-primary/10"
+            disabled={true}
+          >
             <Mail className="w-5 h-5" />
             Messages
           </Button>
@@ -326,12 +417,21 @@ const Home = () => {
       </aside>
 
       {/* Main Content Area */}
-      <main className="ml-72 min-h-screen">
+      <main className="lg:ml-72 min-h-screen">
         {/* Top Bar */}
-        <header className="sticky top-0 z-10 border-b border-primary/10 bg-background/80 backdrop-blur-xl">
-          <div className="flex items-center justify-between px-6 py-4">
-            <div className="flex-1 max-w-xl">
-              <div className="relative">
+        <header className="sticky top-0 z-10 border-b border-primary/10 bg-background/90 backdrop-blur-xl">
+          <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4">
+            {/* Mobile Logo */}
+            <div className="lg:hidden flex items-center gap-2">
+              <Waves className="w-6 h-6 text-primary" strokeWidth={2.5} />
+              <span className="text-lg font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Waveline
+              </span>
+            </div>
+
+            {/* Search bar - hidden on small mobile */}
+            <div className="hidden sm:flex flex-1 max-w-xl lg:max-w-2xl">
+              <div className="relative w-full">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                 <Input 
                   placeholder="Search Waveline..." 
@@ -339,23 +439,36 @@ const Home = () => {
                 />
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-              className="rounded-full hover:bg-primary/10"
-            >
-              {theme === 'dark' ? (
-                <Sun className="w-5 h-5 text-primary" />
-              ) : (
-                <Moon className="w-5 h-5 text-primary" />
-              )}
-            </Button>
+
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
+                className="rounded-full hover:bg-primary/10"
+              >
+                {theme === 'dark' ? (
+                  <Sun className="w-5 h-5 text-primary" />
+                ) : (
+                  <Moon className="w-5 h-5 text-primary" />
+                )}
+              </Button>
+              {/* Mobile compose button */}
+              <ComposeDialog>
+                <Button 
+                  size="icon"
+                  disabled={!user}
+                  className="lg:hidden rounded-full bg-gradient-to-r from-primary to-accent"
+                >
+                  <Waves className="w-5 h-5" />
+                </Button>
+              </ComposeDialog>
+            </div>
           </div>
         </header>
 
         {/* Feed Container */}
-        <div className="max-w-2xl mx-auto py-6 px-4">
+        <div className="max-w-2xl mx-auto py-4 lg:py-6 px-3 sm:px-4 pb-20 lg:pb-6">
           {/* Feed Type Selector */}
           <div className="mb-6">
             <DropdownMenu>
@@ -449,6 +562,9 @@ const Home = () => {
           </div>
         </div>
       </main>
+
+      {/* Mobile Bottom Navigation */}
+      <MobileNav />
 
       {/* Floating animation styles */}
       <style>{`

@@ -1,7 +1,8 @@
 import { useSeoMeta } from '@unhead/react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useFollowActions } from '@/hooks/useFollowActions';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -11,14 +12,17 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { genUserName } from '@/lib/genUserName';
 import { NoteContent } from '@/components/NoteContent';
 import { nip19 } from 'nostr-tools';
-import { Calendar, ExternalLink, MapPin, Link as LinkIcon, MessageCircle, Repeat2, Heart, Zap } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Link as LinkIcon, MessageCircle, UserPlus, UserMinus } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
+import { MobileNav } from '@/components/MobileNav';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 export default function Profile() {
   const { npub } = useParams<{ npub: string }>();
+  const navigate = useNavigate();
   const { user: currentUser } = useCurrentUser();
   const { nostr } = useNostr();
+  const { follow, unfollow, isFollowing, isLoading: followLoading } = useFollowActions();
 
   // Decode npub to hex pubkey
   let pubkey: string | undefined;
@@ -71,10 +75,27 @@ export default function Profile() {
   }
 
   const isOwnProfile = currentUser?.pubkey === pubkey;
+  const following = isFollowing(pubkey);
+
+  const handleFollowToggle = () => {
+    if (following) {
+      unfollow(pubkey);
+    } else {
+      follow(pubkey);
+    }
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10">
-      <div className="max-w-4xl mx-auto px-4 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 pb-20 lg:pb-8">
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+        <Button
+          variant="ghost"
+          onClick={() => navigate(-1)}
+          className="mb-4 rounded-xl hover:bg-primary/10"
+        >
+          <ArrowLeft className="w-4 h-4 mr-2" />
+          Back
+        </Button>
         {/* Profile Header */}
         <Card className="border-primary/10 bg-card/50 backdrop-blur-sm mb-6">
           <CardContent className="pt-6">
@@ -127,10 +148,30 @@ export default function Profile() {
 
                 {!isOwnProfile && currentUser && (
                   <div className="flex gap-2 pt-2">
-                    <Button className="rounded-xl bg-gradient-to-r from-primary to-accent font-bold">
-                      Follow
+                    <Button 
+                      onClick={handleFollowToggle}
+                      disabled={followLoading}
+                      className={`rounded-xl font-bold ${
+                        following 
+                          ? 'bg-accent/20 text-accent border-2 border-accent/30' 
+                          : 'bg-gradient-to-r from-primary to-accent'
+                      }`}
+                      variant={following ? 'outline' : 'default'}
+                    >
+                      {following ? (
+                        <>
+                          <UserMinus className="w-4 h-4 mr-2" />
+                          Unfollow
+                        </>
+                      ) : (
+                        <>
+                          <UserPlus className="w-4 h-4 mr-2" />
+                          Follow
+                        </>
+                      )}
                     </Button>
                     <Button variant="outline" className="rounded-xl">
+                      <MessageCircle className="w-4 h-4 mr-2" />
                       Message
                     </Button>
                   </div>
@@ -180,6 +221,7 @@ export default function Profile() {
           )}
         </div>
       </div>
+      <MobileNav />
     </div>
   );
 }

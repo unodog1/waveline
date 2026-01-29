@@ -13,26 +13,27 @@ export function useFeed(feedType: FeedType, followingPubkeys?: string[]) {
       let events: NostrEvent[];
 
       if (feedType === 'following' && followingPubkeys && followingPubkeys.length > 0) {
-        // Query posts from people the user follows (kind 1 = text notes)
+        // Query posts and reposts from people the user follows
         events = await nostr.query([
           {
-            kinds: [1],
+            kinds: [1, 6], // kind 1 = text notes, kind 6 = reposts
             authors: followingPubkeys,
             limit: 50,
           },
         ]);
 
-        // Filter out replies (posts that have 'e' tags are replies)
-        // Only show root posts in Following feed
+        // Filter out replies from kind 1 posts (posts that have 'e' tags are replies)
+        // Keep all kind 6 reposts
         events = events.filter((event) => {
+          if (event.kind === 6) return true; // Always show reposts
           const eTags = event.tags.filter(([tagName]) => tagName === 'e');
-          return eTags.length === 0;
+          return eTags.length === 0; // Filter out replies
         });
       } else {
-        // Global feed - query all kind 1 events
+        // Global feed - query all kind 1 events and reposts
         events = await nostr.query([
           {
-            kinds: [1],
+            kinds: [1, 6],
             limit: 50,
           },
         ]);

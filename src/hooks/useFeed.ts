@@ -21,6 +21,13 @@ export function useFeed(feedType: FeedType, followingPubkeys?: string[]) {
             limit: 50,
           },
         ]);
+
+        // Filter out replies (posts that have 'e' tags are replies)
+        // Only show root posts in Following feed
+        events = events.filter((event) => {
+          const eTags = event.tags.filter(([tagName]) => tagName === 'e');
+          return eTags.length === 0;
+        });
       } else {
         // Global feed - query all kind 1 events
         events = await nostr.query([

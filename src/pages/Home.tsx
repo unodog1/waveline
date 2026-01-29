@@ -139,15 +139,15 @@ function Post({ event }: { event: NostrEvent }) {
         <div className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words text-[15px]">
           <NoteContent event={event} />
         </div>
-        <div className="flex items-center gap-2 pt-3 border-t border-primary/10">
+        <div className="flex items-center gap-2 pt-4 border-t border-primary/10">
           {/* Reply Button */}
           <button 
             onClick={handleReply}
-            className="flex-1 flex items-center justify-center gap-2 h-10 rounded-full bg-primary/5 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all duration-200 group/btn"
+            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 text-primary hover:text-primary transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border border-primary/20"
           >
-            <MessageCircle className="w-[18px] h-[18px] group-hover/btn:scale-110 transition-all duration-200" strokeWidth={2.5} />
-            <span className="text-sm font-semibold">
-              {event.tags.filter(([t]) => t === 'e').length}
+            <MessageCircle className="w-5 h-5 group-hover/btn:scale-110 group-hover/btn:-rotate-12 transition-all duration-200" strokeWidth={2.5} />
+            <span className="text-sm font-bold">
+              {event.tags.filter(([t]) => t === 'e').length || 'Reply'}
             </span>
           </button>
 
@@ -155,35 +155,35 @@ function Post({ event }: { event: NostrEvent }) {
           <button 
             onClick={handleRepost}
             disabled={isReposted}
-            className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-full transition-all duration-200 group/btn ${
+            className={`flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border ${
               isReposted 
-                ? 'bg-accent/20 text-accent cursor-not-allowed' 
-                : 'bg-accent/5 hover:bg-accent/10 text-muted-foreground hover:text-accent'
+                ? 'bg-gradient-to-br from-accent/30 to-accent/20 text-accent cursor-not-allowed border-accent/30' 
+                : 'bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 text-accent hover:text-accent border-accent/20'
             }`}
           >
-            <Repeat2 className="w-[18px] h-[18px] group-hover/btn:rotate-90 transition-all duration-200" strokeWidth={2.5} />
-            <span className="text-sm font-semibold">0</span>
+            <Repeat2 className="w-5 h-5 group-hover/btn:rotate-180 transition-all duration-300" strokeWidth={2.5} />
+            <span className="text-sm font-bold">Repost</span>
           </button>
 
           {/* Like Button */}
           <button 
             onClick={handleLike}
             disabled={isLiked}
-            className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-full transition-all duration-200 group/btn ${
+            className={`flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border ${
               isLiked 
-                ? 'bg-red-500/20 text-red-500 cursor-not-allowed' 
-                : 'bg-red-500/5 hover:bg-red-500/10 text-muted-foreground hover:text-red-500'
+                ? 'bg-gradient-to-br from-red-500/30 to-red-500/20 text-red-500 cursor-not-allowed border-red-500/30' 
+                : 'bg-gradient-to-br from-red-500/20 to-red-500/10 hover:from-red-500/30 hover:to-red-500/20 text-red-500 hover:text-red-500 border-red-500/20'
             }`}
           >
-            <Heart className={`w-[18px] h-[18px] group-hover/btn:scale-110 transition-all duration-200 ${isLiked ? 'fill-current' : ''}`} strokeWidth={2.5} />
-            <span className="text-sm font-semibold">0</span>
+            <Heart className={`w-5 h-5 group-hover/btn:scale-125 transition-all duration-200 ${isLiked ? 'fill-current' : ''}`} strokeWidth={2.5} />
+            <span className="text-sm font-bold">Like</span>
           </button>
 
           {/* Zap Button */}
-          <div className="flex-1 flex items-center justify-center h-10 rounded-full bg-yellow-500/5 hover:bg-yellow-500/10 transition-all duration-200">
+          <div className="flex-1 flex items-center justify-center h-11 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-yellow-500/10 hover:from-yellow-500/30 hover:to-yellow-500/20 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] border border-yellow-500/20">
             <ZapButton 
               target={event as any} 
-              className="flex items-center justify-center gap-2 text-muted-foreground hover:text-yellow-500 transition-colors duration-200 w-full h-full group/btn"
+              className="flex items-center justify-center gap-2 text-yellow-600 dark:text-yellow-500 hover:text-yellow-500 transition-colors duration-200 w-full h-full group/btn font-bold"
               showCount={true}
             />
           </div>

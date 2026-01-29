@@ -80,52 +80,34 @@ const Index = () => {
       </nav>
 
       {/* Hero Section */}
-      <main className="relative z-10 container mx-auto px-8 py-20">
-        <div className="max-w-4xl mx-auto text-center space-y-8">
+      <main className="relative z-10 flex items-center justify-center min-h-[calc(100vh-96px)] px-8">
+        <div className="max-w-5xl mx-auto text-center space-y-12">
           {/* Main heading with gradient */}
-          <div className="space-y-4">
-            <h1 className="text-7xl md:text-8xl font-bold leading-tight">
+          <div className="space-y-8">
+            <h1 className="text-8xl md:text-9xl font-bold leading-tight tracking-tight">
               <span className="inline-block bg-gradient-to-br from-primary via-accent to-primary bg-clip-text text-transparent animate-gradient">
-                Ride the
-              </span>
-              <br />
-              <span className="inline-block bg-gradient-to-br from-accent via-primary to-accent bg-clip-text text-transparent animate-gradient" 
-                    style={{ animationDelay: '1s' }}>
-                Nostr Wave
+                Ride The Wave
               </span>
             </h1>
             
-            <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+            <p className="text-2xl md:text-3xl text-muted-foreground max-w-3xl mx-auto leading-relaxed font-light">
               Experience social connection that flows naturally. Dive into a desktop client designed for depth, discovery, and fluid interaction.
             </p>
           </div>
 
-          {/* Feature pills */}
-          <div className="flex flex-wrap items-center justify-center gap-3 py-8">
-            {['Fluid Design', 'Deep Connections', 'Immersive Experience', 'Desktop Optimized'].map((feature, i) => (
-              <div 
-                key={feature}
-                className="px-6 py-2 rounded-full bg-primary/10 backdrop-blur-sm border border-primary/20 text-sm font-medium text-foreground/90 hover:bg-primary/20 hover:scale-105 transition-all duration-300 cursor-default"
-                style={{ animationDelay: `${i * 100}ms` }}
-              >
-                {feature}
-              </div>
-            ))}
-          </div>
-
-          {/* CTA */}
-          <div className="pt-8">
+          {/* CTA - Bigger and closer */}
+          <div className="pt-4">
             <Button 
               size="lg" 
-              className="text-lg px-8 py-6 rounded-2xl bg-gradient-to-r from-primary to-accent hover:shadow-xl hover:shadow-primary/50 hover:scale-105 transition-all duration-300 group"
+              className="text-2xl px-12 py-8 rounded-3xl bg-gradient-to-r from-primary to-accent hover:shadow-2xl hover:shadow-primary/60 hover:scale-110 transition-all duration-300 group font-semibold"
             >
-              <Waves className="w-5 h-5 mr-2 group-hover:animate-pulse" />
+              <Waves className="w-7 h-7 mr-3 group-hover:animate-pulse" />
               Dive In
             </Button>
           </div>
 
           {/* Bottom tagline */}
-          <div className="pt-16">
+          <div className="pt-20">
             <p className="text-sm text-muted-foreground">
               Vibed with{' '}
               <a 

@@ -1,14 +1,16 @@
 import { useSeoMeta } from '@unhead/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
 import { useAuthor } from '@/hooks/useAuthor';
+import { useNostrPublish } from '@/hooks/useNostrPublish';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { useTheme } from '@/hooks/useTheme';
-import { Moon, Sun, Waves, Home as HomeIcon, Bell, Mail, Search, User, MessageCircle, Repeat2, Heart, ChevronDown } from 'lucide-react';
+import { Moon, Sun, Waves, Home as HomeIcon, Bell, Mail, Search, User, MessageCircle, Repeat2, Heart, ChevronDown, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useToast } from '@/hooks/useToast';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,13 +23,19 @@ import { useFollowing } from '@/hooks/useFollowing';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { NoteContent } from '@/components/NoteContent';
 import { genUserName } from '@/lib/genUserName';
+import { ZapButton } from '@/components/ZapButton';
 
 type FeedType = 'following' | 'global' | 'trending';
 
 // Post component to display a single Nostr event
 function Post({ event }: { event: NostrEvent }) {
+  const { user } = useCurrentUser();
   const author = useAuthor(event.pubkey);
   const authorMetadata = author.data?.metadata;
+  const { mutate: publishEvent } = useNostrPublish();
+  const { toast } = useToast();
+  const [isLiked, setIsLiked] = useState(false);
+  const [isReposted, setIsReposted] = useState(false);
 
   // Format relative time
   const getRelativeTime = (timestamp: number) => {
@@ -38,6 +46,68 @@ function Post({ event }: { event: NostrEvent }) {
     if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     return `${Math.floor(diff / 86400)}d ago`;
+  };
+
+  // Handle reply
+  const handleReply = () => {
+    if (!user) {
+      toast({ title: 'Please log in to reply', variant: 'destructive' });
+      return;
+    }
+    // TODO: Open reply dialog
+    toast({ title: 'Reply dialog coming soon!' });
+  };
+
+  // Handle repost (NIP-18 kind 6)
+  const handleRepost = () => {
+    if (!user) {
+      toast({ title: 'Please log in to repost', variant: 'destructive' });
+      return;
+    }
+    if (isReposted) return;
+
+    publishEvent(
+      {
+        kind: 6,
+        content: JSON.stringify(event),
+        tags: [
+          ['e', event.id],
+          ['p', event.pubkey],
+        ],
+      },
+      {
+        onSuccess: () => {
+          setIsReposted(true);
+          toast({ title: '🌊 Reposted!' });
+        },
+      }
+    );
+  };
+
+  // Handle like (NIP-25 kind 7 reaction)
+  const handleLike = () => {
+    if (!user) {
+      toast({ title: 'Please log in to like', variant: 'destructive' });
+      return;
+    }
+    if (isLiked) return;
+
+    publishEvent(
+      {
+        kind: 7,
+        content: '+',
+        tags: [
+          ['e', event.id],
+          ['p', event.pubkey],
+        ],
+      },
+      {
+        onSuccess: () => {
+          setIsLiked(true);
+          toast({ title: '❤️ Liked!' });
+        },
+      }
+    );
   };
 
   return (
@@ -69,33 +139,54 @@ function Post({ event }: { event: NostrEvent }) {
         <div className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words text-[15px]">
           <NoteContent event={event} />
         </div>
-        <div className="flex items-center gap-1 pt-3 border-t border-primary/10">
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="flex-1 gap-2 hover:bg-primary/10 hover:text-primary rounded-2xl h-10 group/btn transition-all duration-200"
+        <div className="flex items-center gap-2 pt-3 border-t border-primary/10">
+          {/* Reply Button */}
+          <button 
+            onClick={handleReply}
+            className="flex-1 flex items-center justify-center gap-2 h-10 rounded-full bg-primary/5 hover:bg-primary/10 text-muted-foreground hover:text-primary transition-all duration-200 group/btn"
           >
-            <MessageCircle className="w-[18px] h-[18px] group-hover/btn:scale-110 group-hover/btn:-rotate-12 transition-all duration-200" strokeWidth={2} />
+            <MessageCircle className="w-[18px] h-[18px] group-hover/btn:scale-110 transition-all duration-200" strokeWidth={2.5} />
             <span className="text-sm font-semibold">
               {event.tags.filter(([t]) => t === 'e').length}
             </span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="flex-1 gap-2 hover:bg-accent/10 hover:text-accent rounded-2xl h-10 group/btn transition-all duration-200"
+          </button>
+
+          {/* Repost Button */}
+          <button 
+            onClick={handleRepost}
+            disabled={isReposted}
+            className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-full transition-all duration-200 group/btn ${
+              isReposted 
+                ? 'bg-accent/20 text-accent cursor-not-allowed' 
+                : 'bg-accent/5 hover:bg-accent/10 text-muted-foreground hover:text-accent'
+            }`}
           >
-            <Repeat2 className="w-[18px] h-[18px] group-hover/btn:scale-110 group-hover/btn:rotate-90 transition-all duration-200" strokeWidth={2} />
+            <Repeat2 className="w-[18px] h-[18px] group-hover/btn:rotate-90 transition-all duration-200" strokeWidth={2.5} />
             <span className="text-sm font-semibold">0</span>
-          </Button>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            className="flex-1 gap-2 hover:bg-red-500/10 hover:text-red-500 rounded-2xl h-10 group/btn transition-all duration-200"
+          </button>
+
+          {/* Like Button */}
+          <button 
+            onClick={handleLike}
+            disabled={isLiked}
+            className={`flex-1 flex items-center justify-center gap-2 h-10 rounded-full transition-all duration-200 group/btn ${
+              isLiked 
+                ? 'bg-red-500/20 text-red-500 cursor-not-allowed' 
+                : 'bg-red-500/5 hover:bg-red-500/10 text-muted-foreground hover:text-red-500'
+            }`}
           >
-            <Heart className="w-[18px] h-[18px] group-hover/btn:scale-125 group-hover/btn:fill-current transition-all duration-200" strokeWidth={2} />
+            <Heart className={`w-[18px] h-[18px] group-hover/btn:scale-110 transition-all duration-200 ${isLiked ? 'fill-current' : ''}`} strokeWidth={2.5} />
             <span className="text-sm font-semibold">0</span>
-          </Button>
+          </button>
+
+          {/* Zap Button */}
+          <div className="flex-1 flex items-center justify-center h-10 rounded-full bg-yellow-500/5 hover:bg-yellow-500/10 transition-all duration-200">
+            <ZapButton 
+              target={event as any} 
+              className="flex items-center justify-center gap-2 text-muted-foreground hover:text-yellow-500 transition-colors duration-200 w-full h-full group/btn"
+              showCount={true}
+            />
+          </div>
         </div>
       </CardContent>
     </Card>

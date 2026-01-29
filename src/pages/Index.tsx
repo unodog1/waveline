@@ -2,15 +2,32 @@ import { useSeoMeta } from '@unhead/react';
 import { Button } from '@/components/ui/button';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { useTheme } from '@/hooks/useTheme';
+import { useLocalStorage } from '@/hooks/useLocalStorage';
 import { Moon, Sun, Waves } from 'lucide-react';
+import { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const Index = () => {
   const { theme, setTheme } = useTheme();
+  const [hasVisited, setHasVisited] = useLocalStorage('waveline:has-visited', false);
+  const navigate = useNavigate();
 
   useSeoMeta({
     title: 'Waveline - Ride the Nostr Wave',
     description: 'A modern, ocean-inspired desktop Nostr client. Immerse yourself in a fluid, unconventional social experience.',
   });
+
+  // Redirect returning users to /home
+  useEffect(() => {
+    if (hasVisited) {
+      navigate('/home');
+    }
+  }, [hasVisited, navigate]);
+
+  const handleDiveIn = () => {
+    setHasVisited(true);
+    navigate('/home');
+  };
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-gradient-to-br from-background via-primary/5 to-accent/10 animate-gradient-bg">
@@ -110,7 +127,8 @@ const Index = () => {
           {/* CTA - Bigger with animated gradient */}
           <div className="pt-4 animate-fade-in-up" style={{ animationDelay: '0.2s' }}>
             <Button 
-              size="lg" 
+              size="lg"
+              onClick={handleDiveIn}
               className="relative text-2xl px-12 py-8 rounded-3xl bg-gradient-to-r from-primary via-accent to-primary hover:shadow-2xl hover:shadow-primary/60 hover:scale-110 transition-all duration-300 group font-semibold overflow-hidden animate-gradient-button"
             >
               <span className="relative z-10 flex items-center">

@@ -20,14 +20,14 @@ import { Switch } from '@/components/ui/switch';
 import { Loader2, Upload } from 'lucide-react';
 import { NSchema as n, type NostrMetadata } from '@nostrify/nostrify';
 import { useQueryClient } from '@tanstack/react-query';
-import { useUploadFile } from '@/hooks/useUploadFile';
+import { useNostrBuildUpload } from '@/hooks/useNostrBuildUpload';
 
 export const EditProfileForm: React.FC = () => {
   const queryClient = useQueryClient();
 
   const { user, metadata } = useCurrentUser();
   const { mutateAsync: publishEvent, isPending } = useNostrPublish();
-  const { mutateAsync: uploadFile, isPending: isUploading } = useUploadFile();
+  const { mutateAsync: uploadFile, isPending: isUploading } = useNostrBuildUpload();
   const { toast } = useToast();
 
   // Initialize the form with default values
@@ -61,13 +61,22 @@ export const EditProfileForm: React.FC = () => {
 
   // Handle file uploads for profile picture and banner
   const uploadPicture = async (file: File, field: 'picture' | 'banner') => {
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      toast({
+        title: 'Error',
+        description: 'Image too large. Maximum file size is 10MB.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     try {
-      // The first tuple in the array contains the URL
-      const [[_, url]] = await uploadFile(file);
-      form.setValue(field, url);
+      const result = await uploadFile(file);
+      form.setValue(field, result.url);
       toast({
         title: 'Success',
-        description: `${field === 'picture' ? 'Profile picture' : 'Banner'} uploaded successfully`,
+        description: `${field === 'picture' ? 'Profile picture' : 'Banner'} uploaded to nostr.build!`,
       });
     } catch (error) {
       console.error(`Failed to upload ${field}:`, error);

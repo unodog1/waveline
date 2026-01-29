@@ -18,6 +18,7 @@ import {
   Mail, 
   Search as SearchIcon,
   Settings as SettingsIcon,
+  Wallet as WalletIcon,
   ChevronDown
 } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
@@ -117,6 +118,17 @@ export function Layout({ children, showSearch = true, showRightSidebar = true }:
           <Button 
             variant="ghost" 
             className={`justify-start gap-3 text-base h-12 hover:bg-primary/10 ${
+              isActive('/wallet') ? 'bg-primary/10 text-primary font-bold' : ''
+            }`}
+            onClick={() => navigate('/wallet')}
+            disabled={!user}
+          >
+            <WalletIcon className="w-5 h-5" />
+            Wallet
+          </Button>
+          <Button 
+            variant="ghost" 
+            className={`justify-start gap-3 text-base h-12 hover:bg-primary/10 ${
               isActive('/settings') ? 'bg-primary/10 text-primary font-bold' : ''
             }`}
             onClick={() => navigate('/settings')}
@@ -165,13 +177,14 @@ export function Layout({ children, showSearch = true, showRightSidebar = true }:
                 >
                   View Profile
                 </DropdownMenuItem>
+                <DropdownMenuSeparator />
                 <DropdownMenuItem 
-                  onClick={() => navigate('/settings/profile')}
+                  onClick={() => navigate('/wallet')}
                   className="cursor-pointer rounded-xl font-semibold"
                 >
-                  Edit Profile
+                  <WalletIcon className="w-4 h-4 mr-2" />
+                  Wallet
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem 
                   onClick={() => navigate('/settings')}
                   className="cursor-pointer rounded-xl font-semibold"

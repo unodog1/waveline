@@ -11,10 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { genUserName } from '@/lib/genUserName';
 import { Hash, TrendingUp, UserPlus, Sparkles } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
-import { useNavigate as useRouterNavigate } from 'react-router-dom';
 
 function SuggestedUser({ pubkey }: { pubkey: string }) {
-  const navigate = useRouterNavigate();
   const navigate = useNavigate();
   const author = useAuthor(pubkey);
   const metadata = author.data?.metadata;
@@ -67,7 +65,7 @@ function SuggestedUser({ pubkey }: { pubkey: string }) {
 }
 
 function TrendingHashtag({ tag, count }: { tag: string; count: number }) {
-  const navigate = useRouterNavigate();
+  const navigate = useNavigate();
 
   return (
     <div 
@@ -94,7 +92,7 @@ function TrendingHashtag({ tag, count }: { tag: string; count: number }) {
 
 export function RightSidebar() {
   const { nostr } = useNostr();
-  const navigate = useRouterNavigate();
+  const navigate = useNavigate();
 
   // Fetch suggested users to follow
   const { data: suggestedUsers = [], isLoading: usersLoading } = useQuery({

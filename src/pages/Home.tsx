@@ -89,7 +89,11 @@ const Home = () => {
     <div className="space-y-4">
       {isLoading ? (
         [...Array(3)].map((_, i) => (
-          <Card key={i} className="border-primary/10 bg-card/50 backdrop-blur-sm">
+          <Card 
+            key={i} 
+            className="border-primary/10 bg-card/50 backdrop-blur-sm animate-pulse"
+            style={{ animationDelay: `${i * 100}ms` }}
+          >
             <CardContent className="pt-6 space-y-3">
               <div className="flex gap-3">
                 <Skeleton className="w-12 h-12 rounded-full" />
@@ -107,7 +111,7 @@ const Home = () => {
           </Card>
         ))
       ) : posts.length === 0 ? (
-        <Card className="border-dashed border-primary/20">
+        <Card className="border-dashed border-primary/20 animate-fade-in">
           <CardContent className="py-12 px-8 text-center">
             <div className="max-w-sm mx-auto">
               <p className="text-muted-foreground">
@@ -119,41 +123,22 @@ const Home = () => {
           </CardContent>
         </Card>
       ) : (
-        posts.map((event) => <Post key={event.id} event={event} />)
+        posts.map((event, index) => (
+          <div 
+            key={event.id} 
+            className="animate-fade-in"
+            style={{ 
+              animationDelay: `${index * 50}ms`,
+              animationFillMode: 'backwards'
+            }}
+          >
+            <Post event={event} />
+          </div>
+        ))
       )}
     </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-2">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-5/6" />
-                      <Skeleton className="h-4 w-4/6" />
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : posts.length === 0 ? (
-              // Empty state
-              <Card className="border-dashed border-primary/20">
-                <CardContent className="py-12 px-8 text-center">
-                  <div className="max-w-sm mx-auto space-y-4">
-                    <Waves className="w-12 h-12 mx-auto text-muted-foreground opacity-50" />
-                    <p className="text-muted-foreground">
-                      {feedType === 'following' 
-                        ? "No posts from people you follow yet. Try switching to the Global feed or follow some users!"
-                        : "No posts found. The ocean is quiet right now. 🌊"}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              // Display posts
-              posts.map((event) => <Post key={event.id} event={event} />)
-        )}
       </div>
-    </div>
-  </Layout>
+    </Layout>
   );
 };
 

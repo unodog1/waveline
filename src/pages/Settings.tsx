@@ -1,18 +1,22 @@
 import { useSeoMeta } from '@unhead/react';
-import { useState } from 'react';
 import { Layout } from '@/components/Layout';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { RelayListManager } from '@/components/RelayListManager';
-import { EditProfileForm } from '@/components/EditProfileForm';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useAuthor } from '@/hooks/useAuthor';
+import { useMuteList } from '@/hooks/useMuteList';
 import { useTheme } from '@/hooks/useTheme';
-import { Sun, Moon, Monitor } from 'lucide-react';
+import { Sun, Moon, Monitor, VolumeX, Loader2 } from 'lucide-react';
+import { genUserName } from '@/lib/genUserName';
 
 export default function Settings() {
   const { user } = useCurrentUser();
   const { theme, setTheme } = useTheme();
+  const { muteList, isLoading: muteLoading, unmutePubkey } = useMuteList();
 
   useSeoMeta({
     title: 'Settings - Waveline',
@@ -38,29 +42,18 @@ export default function Settings() {
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 lg:pb-6">
         <h1 className="text-3xl font-bold mb-6">Settings</h1>
 
-        <Tabs defaultValue="profile" className="space-y-6">
+        <Tabs defaultValue="appearance" className="space-y-6">
           <TabsList className="bg-background/50 backdrop-blur-sm border border-primary/10 p-1 rounded-2xl">
-            <TabsTrigger value="profile" className="rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-semibold">
-              Profile
-            </TabsTrigger>
             <TabsTrigger value="appearance" className="rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-semibold">
               Appearance
             </TabsTrigger>
             <TabsTrigger value="relays" className="rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-semibold">
               Relays
             </TabsTrigger>
+            <TabsTrigger value="privacy" className="rounded-xl data-[state=active]:bg-primary/10 data-[state=active]:text-primary font-semibold">
+              Privacy
+            </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="profile" className="space-y-6">
-            <Card className="border-primary/10 bg-card/50 backdrop-blur-sm">
-              <CardHeader>
-                <CardTitle className="text-xl font-bold">Edit Profile</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <EditProfileForm />
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="appearance" className="space-y-6">
             <Card className="border-primary/10 bg-card/50 backdrop-blur-sm">
@@ -102,14 +95,81 @@ export default function Settings() {
             <Card className="border-primary/10 bg-card/50 backdrop-blur-sm">
               <CardHeader>
                 <CardTitle className="text-xl font-bold">Relay Configuration</CardTitle>
+                <CardDescription>Manage your Nostr relay connections</CardDescription>
               </CardHeader>
               <CardContent>
                 <RelayListManager />
               </CardContent>
             </Card>
           </TabsContent>
+
+          <TabsContent value="privacy" className="space-y-6">
+            <Card className="border-primary/10 bg-card/50 backdrop-blur-sm">
+              <CardHeader>
+                <CardTitle className="text-xl font-bold flex items-center gap-2">
+                  <VolumeX className="w-5 h-5 text-primary" />
+                  Muted Users
+                </CardTitle>
+                <CardDescription>
+                  Manage users you have muted. Their posts won't appear in your feeds.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {muteLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-primary" />
+                  </div>
+                ) : muteList.pubkeys.length === 0 ? (
+                  <div className="text-center py-8">
+                    <VolumeX className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">No muted users</p>
+                    <p className="text-sm text-muted-foreground mt-1">
+                      Muted users will appear here
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    {muteList.pubkeys.map((pubkey) => (
+                      <MutedUserItem key={pubkey} pubkey={pubkey} onUnmute={unmutePubkey} />
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
     </Layout>
+  );
+}
+
+// Component to display a muted user
+function MutedUserItem({ pubkey, onUnmute }: { pubkey: string; onUnmute: (pubkey: string) => void }) {
+  const author = useAuthor(pubkey);
+  const metadata = author.data?.metadata;
+
+  return (
+    <div className="flex items-center justify-between p-3 rounded-xl bg-background/50 hover:bg-background/80 transition-colors">
+      <div className="flex items-center gap-3">
+        <Avatar className="w-10 h-10 ring-2 ring-primary/20">
+          <AvatarImage src={metadata?.picture} />
+          <AvatarFallback className="bg-gradient-to-br from-primary/30 to-accent/30 text-primary font-semibold text-sm">
+            {(metadata?.name || genUserName(pubkey)).charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="font-semibold text-sm">{metadata?.name || genUserName(pubkey)}</p>
+          <p className="text-xs text-muted-foreground font-mono">{pubkey.slice(0, 16)}...</p>
+        </div>
+      </div>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onUnmute(pubkey)}
+        className="rounded-xl hover:bg-primary/10"
+      >
+        Unmute
+      </Button>
+    </div>
   );
 }

@@ -1,4 +1,5 @@
 import { useSeoMeta } from '@unhead/react';
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
@@ -8,11 +9,13 @@ import { useQuery } from '@tanstack/react-query';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Skeleton } from '@/components/ui/skeleton';
+import { EditProfileForm } from '@/components/EditProfileForm';
 import { genUserName } from '@/lib/genUserName';
 import { NoteContent } from '@/components/NoteContent';
 import { nip19 } from 'nostr-tools';
-import { ArrowLeft, ExternalLink, Link as LinkIcon, MessageCircle, UserPlus, UserMinus } from 'lucide-react';
+import { ArrowLeft, ExternalLink, Link as LinkIcon, MessageCircle, UserPlus, UserMinus, Edit } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
 import { Layout } from '@/components/Layout';
 import type { NostrEvent } from '@nostrify/nostrify';
@@ -23,6 +26,7 @@ export default function Profile() {
   const { user: currentUser } = useCurrentUser();
   const { nostr } = useNostr();
   const { follow, unfollow, isFollowing, isLoading: followLoading } = useFollowActions();
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   // Decode npub to hex pubkey
   let pubkey: string | undefined;
@@ -146,47 +150,72 @@ export default function Profile() {
                   )}
                 </div>
 
-                {!isOwnProfile && currentUser && (
-                  <div className="flex gap-2 pt-2">
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  {isOwnProfile ? (
                     <Button 
-                      onClick={handleFollowToggle}
-                      disabled={followLoading}
-                      className={`rounded-xl font-bold ${
-                        following 
-                          ? 'bg-accent/20 text-accent border-2 border-accent/30' 
-                          : 'bg-gradient-to-r from-primary to-accent'
-                      }`}
-                      variant={following ? 'outline' : 'default'}
+                      onClick={() => setEditDialogOpen(true)}
+                      className="rounded-xl font-bold bg-gradient-to-r from-primary to-accent"
                     >
-                      {following ? (
-                        <>
-                          <UserMinus className="w-4 h-4 mr-2" />
-                          Unfollow
-                        </>
-                      ) : (
-                        <>
-                          <UserPlus className="w-4 h-4 mr-2" />
-                          Follow
-                        </>
-                      )}
+                      <Edit className="w-4 h-4 mr-2" />
+                      Edit Profile
                     </Button>
-                    <Button variant="outline" className="rounded-xl">
-                      <MessageCircle className="w-4 h-4 mr-2" />
-                      Message
-                    </Button>
-                  </div>
-                )}
+                  ) : currentUser && (
+                    <>
+                      <Button 
+                        onClick={handleFollowToggle}
+                        disabled={followLoading}
+                        className={`rounded-xl font-bold ${
+                          following 
+                            ? 'bg-accent/20 text-accent border-2 border-accent/30' 
+                            : 'bg-gradient-to-r from-primary to-accent'
+                        }`}
+                        variant={following ? 'outline' : 'default'}
+                      >
+                        {following ? (
+                          <>
+                            <UserMinus className="w-4 h-4 mr-2" />
+                            Unfollow
+                          </>
+                        ) : (
+                          <>
+                            <UserPlus className="w-4 h-4 mr-2" />
+                            Follow
+                          </>
+                        )}
+                      </Button>
+                      <Button variant="outline" className="rounded-xl">
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Message
+                      </Button>
+                    </>
+                  )}
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
+
+        {/* Edit Profile Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto border-primary/20 bg-background/95 backdrop-blur-xl">
+            <DialogHeader>
+              <DialogTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                Edit Profile
+              </DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              <EditProfileForm />
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Posts */}
         <div className="space-y-4">
           <h2 className="text-xl font-bold px-2">Posts</h2>
           {postsLoading ? (
             [...Array(3)].map((_, i) => (
-              <Card key={i} className="border-primary/10 bg-card/50">
+              <Card key={i} className="border-primary/10 bg-card/50 animate-pulse">
                 <CardContent className="pt-6">
                   <Skeleton className="h-4 w-full mb-2" />
                   <Skeleton className="h-4 w-5/6" />
@@ -194,16 +223,23 @@ export default function Profile() {
               </Card>
             ))
           ) : posts.length === 0 ? (
-            <Card className="border-dashed border-primary/20">
+            <Card className="border-dashed border-primary/20 animate-fade-in">
               <CardContent className="py-12 text-center">
                 <p className="text-muted-foreground">No posts yet 🌊</p>
               </CardContent>
             </Card>
           ) : (
-            posts.map((event) => (
-              <Card key={event.id} className="border-primary/10 bg-card/50 backdrop-blur-sm">
+            posts.map((event, index) => (
+              <Card 
+                key={event.id} 
+                className="border-primary/10 bg-card/50 backdrop-blur-sm transition-all duration-300 hover:shadow-lg hover:shadow-primary/10 hover:-translate-y-0.5"
+                style={{ 
+                  animationDelay: `${index * 50}ms`,
+                  animationFillMode: 'backwards'
+                }}
+              >
                 <CardContent className="pt-6">
-                  <div className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words">
+                  <div className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words overflow-hidden">
                     <NoteContent event={event} />
                   </div>
                   <div className="flex items-center justify-between text-sm text-muted-foreground">

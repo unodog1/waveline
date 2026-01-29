@@ -77,10 +77,6 @@ export function Post({ event: rawEvent, showThread = true, isMainPost = false }:
     enabled: !!quotedEventId,
   });
 
-  // Get quoted event author separately to avoid conditional hook calls
-  const quotedAuthor = useAuthor(quotedEvent?.pubkey || '');
-  const quotedAuthorMetadata = quotedAuthor.data?.metadata;
-
   // Extract URLs from content
   const extractUrls = (text: string): string[] => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -251,28 +247,7 @@ export function Post({ event: rawEvent, showThread = true, isMainPost = false }:
           ))}
 
           {/* Quoted Post */}
-          {quotedEvent && (
-            <Card className="border-primary/10 bg-background/50 mt-3">
-              <CardContent className="pt-4">
-                <div className="flex gap-3 mb-2">
-                  <Avatar className="w-8 h-8 ring-1 ring-primary/20">
-                    <AvatarImage src={quotedAuthorMetadata?.picture} />
-                    <AvatarFallback className="bg-gradient-to-br from-primary/30 to-accent/30 text-primary font-semibold text-xs">
-                      {(quotedAuthorMetadata?.name || genUserName(quotedEvent.pubkey)).charAt(0).toUpperCase()}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-bold text-xs truncate">
-                      {quotedAuthorMetadata?.name || genUserName(quotedEvent.pubkey)}
-                    </p>
-                  </div>
-                </div>
-                <div className="text-sm text-foreground/80 line-clamp-4 overflow-hidden break-words">
-                  <NoteContent event={quotedEvent} />
-                </div>
-              </CardContent>
-            </Card>
-          )}
+          {quotedEvent && <QuotedPost event={quotedEvent} />}
 
           {/* Interaction Buttons */}
           <div className="flex items-center gap-1.5 sm:gap-2 pt-3 border-t border-primary/10">
@@ -346,5 +321,34 @@ export function Post({ event: rawEvent, showThread = true, isMainPost = false }:
         </CardContent>
       </Card>
     </>
+  );
+}
+
+// Separate component for quoted posts to avoid hook order issues
+function QuotedPost({ event }: { event: NostrEvent }) {
+  const author = useAuthor(event.pubkey);
+  const metadata = author.data?.metadata;
+
+  return (
+    <Card className="border-primary/10 bg-background/50 mt-3">
+      <CardContent className="pt-4">
+        <div className="flex gap-3 mb-2">
+          <Avatar className="w-8 h-8 ring-1 ring-primary/20">
+            <AvatarImage src={metadata?.picture} />
+            <AvatarFallback className="bg-gradient-to-br from-primary/30 to-accent/30 text-primary font-semibold text-xs">
+              {(metadata?.name || genUserName(event.pubkey)).charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="font-bold text-xs truncate">
+              {metadata?.name || genUserName(event.pubkey)}
+            </p>
+          </div>
+        </div>
+        <div className="text-sm text-foreground/80 line-clamp-4 overflow-hidden break-words">
+          <NoteContent event={event} />
+        </div>
+      </CardContent>
+    </Card>
   );
 }

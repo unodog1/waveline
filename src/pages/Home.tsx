@@ -18,17 +18,22 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useFeed } from '@/hooks/useFeed';
 import { useFollowing } from '@/hooks/useFollowing';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { NoteContent } from '@/components/NoteContent';
 import { genUserName } from '@/lib/genUserName';
 import { ZapButton } from '@/components/ZapButton';
+import { ComposeDialog } from '@/components/ComposeDialog';
+import { ReplyDialog } from '@/components/ReplyDialog';
+import { nip19 } from 'nostr-tools';
 
 type FeedType = 'following' | 'global' | 'trending';
 
 // Post component to display a single Nostr event
 function Post({ event }: { event: NostrEvent }) {
+  const navigate = useNavigate();
   const { user } = useCurrentUser();
   const author = useAuthor(event.pubkey);
   const authorMetadata = author.data?.metadata;
@@ -36,6 +41,12 @@ function Post({ event }: { event: NostrEvent }) {
   const { toast } = useToast();
   const [isLiked, setIsLiked] = useState(false);
   const [isReposted, setIsReposted] = useState(false);
+  const [replyDialogOpen, setReplyDialogOpen] = useState(false);
+
+  const handleProfileClick = () => {
+    const npub = nip19.npubEncode(event.pubkey);
+    navigate(`/profile/${npub}`);
+  };
 
   // Format relative time
   const getRelativeTime = (timestamp: number) => {
@@ -54,8 +65,7 @@ function Post({ event }: { event: NostrEvent }) {
       toast({ title: 'Please log in to reply', variant: 'destructive' });
       return;
     }
-    // TODO: Open reply dialog
-    toast({ title: 'Reply dialog coming soon!' });
+    setReplyDialogOpen(true);
   };
 
   // Handle repost (NIP-18 kind 6)
@@ -111,10 +121,15 @@ function Post({ event }: { event: NostrEvent }) {
   };
 
   return (
-    <Card className="border-primary/10 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300 group overflow-hidden">
+    <>
+      <ReplyDialog event={event} open={replyDialogOpen} onOpenChange={setReplyDialogOpen} />
+      <Card className="border-primary/10 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300 group overflow-hidden">
       <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
-          <Avatar className="w-12 h-12 ring-2 ring-primary/20 ring-offset-2 ring-offset-background transition-all duration-300 group-hover:ring-primary/40">
+          <Avatar 
+            className="w-12 h-12 ring-2 ring-primary/20 ring-offset-2 ring-offset-background transition-all duration-300 group-hover:ring-primary/40 cursor-pointer"
+            onClick={handleProfileClick}
+          >
             <AvatarImage src={authorMetadata?.picture} />
             <AvatarFallback className="bg-gradient-to-br from-primary/30 to-accent/30 text-primary font-semibold">
               {(authorMetadata?.name || genUserName(event.pubkey)).charAt(0).toUpperCase()}
@@ -122,7 +137,10 @@ function Post({ event }: { event: NostrEvent }) {
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-bold truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
+              <span 
+                className="font-bold truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text cursor-pointer hover:text-primary transition-colors"
+                onClick={handleProfileClick}
+              >
                 {authorMetadata?.name || genUserName(event.pubkey)}
               </span>
               <span className="text-xs text-muted-foreground font-medium">
@@ -190,10 +208,12 @@ function Post({ event }: { event: NostrEvent }) {
         </div>
       </CardContent>
     </Card>
+    </>
   );
 }
 
 const Home = () => {
+  const navigate = useNavigate();
   const { user, metadata } = useCurrentUser();
   const { theme, setTheme } = useTheme();
   const [feedType, setFeedType] = useState<FeedType>('following');
@@ -203,6 +223,13 @@ const Home = () => {
 
   // Fetch feed based on feed type
   const { data: posts = [], isLoading } = useFeed(feedType, followingPubkeys);
+
+  const handleViewOwnProfile = () => {
+    if (user) {
+      const npub = nip19.npubEncode(user.pubkey);
+      navigate(`/profile/${npub}`);
+    }
+  };
 
   useSeoMeta({
     title: 'Home - Waveline',
@@ -250,24 +277,35 @@ const Home = () => {
             <Mail className="w-5 h-5" />
             Messages
           </Button>
-          <Button variant="ghost" className="justify-start gap-3 text-base h-12 hover:bg-primary/10">
+          <Button 
+            variant="ghost" 
+            className="justify-start gap-3 text-base h-12 hover:bg-primary/10"
+            onClick={handleViewOwnProfile}
+            disabled={!user}
+          >
             <User className="w-5 h-5" />
             Profile
           </Button>
         </nav>
 
         {/* Compose Button */}
-        <Button 
-          size="lg"
-          className="w-full mt-4 rounded-2xl bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 font-semibold"
-        >
-          Create Wave
-        </Button>
+        <ComposeDialog>
+          <Button 
+            size="lg"
+            disabled={!user}
+            className="w-full mt-4 rounded-2xl bg-gradient-to-r from-primary to-accent hover:shadow-lg hover:shadow-primary/50 transition-all duration-300 font-bold text-base"
+          >
+            Create Wave
+          </Button>
+        </ComposeDialog>
 
         {/* User Profile at Bottom */}
         <div className="mt-auto pt-6 border-t border-primary/10">
           {user ? (
-            <div className="flex items-center gap-3 p-3 rounded-xl hover:bg-primary/10 cursor-pointer transition-colors">
+            <div 
+              className="flex items-center gap-3 p-3 rounded-xl hover:bg-primary/10 cursor-pointer transition-colors"
+              onClick={handleViewOwnProfile}
+            >
               <Avatar className="w-10 h-10 border-2 border-primary/20">
                 <AvatarImage src={metadata?.picture} />
                 <AvatarFallback className="bg-primary/20 text-primary">

@@ -7,10 +7,9 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MobileNav } from '@/components/MobileNav';
+import { Layout } from '@/components/Layout';
 import { genUserName } from '@/lib/genUserName';
-import { Heart, Repeat2, MessageCircle, Zap, ArrowLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Heart, Repeat2, MessageCircle, Zap } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
 import type { NostrEvent } from '@nostrify/nostrify';
 
@@ -62,9 +61,9 @@ function NotificationItem({ event }: { event: NostrEvent }) {
 }
 
 export default function Notifications() {
-  const navigate = useNavigate();
   const { user } = useCurrentUser();
   const { nostr } = useNostr();
+  const navigate = useNavigate();
 
   const { data: notifications = [], isLoading } = useQuery({
     queryKey: ['notifications', user?.pubkey],
@@ -96,31 +95,22 @@ export default function Notifications() {
 
   if (!user) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 flex items-center justify-center pb-20 lg:pb-0">
-        <Card className="border-primary/10 bg-card/50 max-w-md mx-4">
-          <CardContent className="pt-6 text-center">
-            <p className="text-muted-foreground">Please log in to view notifications</p>
-          </CardContent>
-        </Card>
-        <MobileNav />
-      </div>
+      <Layout showSearch={false}>
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
+          <Card className="border-primary/10 bg-card/50 max-w-md w-full">
+            <CardContent className="pt-6 text-center">
+              <p className="text-muted-foreground">Please log in to view notifications</p>
+            </CardContent>
+          </Card>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 pb-20 lg:pb-8">
-      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            size="icon"
-            className="rounded-xl hover:bg-primary/10 lg:hidden"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">Notifications</h1>
-        </div>
+    <Layout showSearch={false}>
+      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 lg:pb-6">
+        <h1 className="text-2xl font-bold mb-6">Notifications</h1>
 
         <div className="space-y-3">
           {isLoading ? (
@@ -148,7 +138,6 @@ export default function Notifications() {
           )}
         </div>
       </div>
-      <MobileNav />
-    </div>
+    </Layout>
   );
 }

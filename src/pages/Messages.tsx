@@ -1,24 +1,36 @@
 import { useSeoMeta } from '@unhead/react';
+import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { Layout } from '@/components/Layout';
 import { DMMessagingInterface } from '@/components/dm/DMMessagingInterface';
+import { Card, CardContent } from '@/components/ui/card';
 
-const Messages = () => {
+export default function Messages() {
+  const { user } = useCurrentUser();
+
   useSeoMeta({
-    title: 'Messages',
-    description: 'Private encrypted messaging on Nostr',
+    title: 'Messages - Waveline',
+    description: 'Your private messages',
   });
 
-  return (
-    <div className="min-h-screen bg-background">
-      <div className="container mx-auto p-4 h-screen flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between mb-4">
-          <h1 className="text-2xl font-semibold">Messages</h1>
+  if (!user) {
+    return (
+      <Layout showSearch={false}>
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
+          <Card className="border-primary/10 bg-card/50 max-w-md w-full">
+            <CardContent className="pt-6 text-center">
+              <p className="text-muted-foreground">Please log in to view messages</p>
+            </CardContent>
+          </Card>
         </div>
+      </Layout>
+    );
+  }
 
-        <DMMessagingInterface className="flex-1" />
+  return (
+    <Layout showSearch={false}>
+      <div className="h-[calc(100vh-60px)] lg:h-[calc(100vh-72px)] pb-16 lg:pb-0">
+        <DMMessagingInterface className="h-full" />
       </div>
-    </div>
+    </Layout>
   );
-};
-
-export default Messages;
+}

@@ -14,7 +14,7 @@ import { NoteContent } from '@/components/NoteContent';
 import { nip19 } from 'nostr-tools';
 import { ArrowLeft, ExternalLink, Link as LinkIcon, MessageCircle, UserPlus, UserMinus } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
-import { MobileNav } from '@/components/MobileNav';
+import { Layout } from '@/components/Layout';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 export default function Profile() {
@@ -86,8 +86,8 @@ export default function Profile() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 pb-20 lg:pb-8">
-      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
+    <Layout showSearch={false}>
+      <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8 pb-20 lg:pb-8">
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
@@ -221,7 +221,6 @@ export default function Profile() {
           )}
         </div>
       </div>
-      <MobileNav />
-    </div>
+    </Layout>
   );
 }

@@ -15,6 +15,7 @@ import { NoteContent } from '@/components/NoteContent';
 import { genUserName } from '@/lib/genUserName';
 import { ZapButton } from '@/components/ZapButton';
 import { ReplyDialog } from '@/components/ReplyDialog';
+import { Layout } from '@/components/Layout';
 import { nip19 } from 'nostr-tools';
 import type { NostrEvent } from '@nostrify/nostrify';
 import { useState } from 'react';
@@ -235,8 +236,8 @@ export default function Thread() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10">
-      <div className="max-w-3xl mx-auto px-4 py-6 space-y-4">
+    <Layout showSearch={false}>
+      <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 lg:pb-6 space-y-4">
         <Button
           variant="ghost"
           onClick={() => navigate(-1)}
@@ -288,6 +289,6 @@ export default function Thread() {
           </Card>
         )}
       </div>
-    </div>
+    </Layout>
   );
 }

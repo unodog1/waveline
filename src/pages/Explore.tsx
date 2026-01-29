@@ -7,11 +7,11 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Skeleton } from '@/components/ui/skeleton';
-import { MobileNav } from '@/components/MobileNav';
+import { Layout } from '@/components/Layout';
 import { useAuthor } from '@/hooks/useAuthor';
 import { useFollowActions } from '@/hooks/useFollowActions';
 import { genUserName } from '@/lib/genUserName';
-import { Search, ArrowLeft, UserPlus, UserMinus } from 'lucide-react';
+import { Search, UserPlus, UserMinus } from 'lucide-react';
 import { nip19 } from 'nostr-tools';
 import { useState } from 'react';
 
@@ -71,8 +71,8 @@ function UserCard({ pubkey }: { pubkey: string }) {
 }
 
 export default function Explore() {
-  const navigate = useNavigate();
   const { nostr } = useNostr();
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
 
   const { data: users = [], isLoading } = useQuery({
@@ -98,19 +98,9 @@ export default function Explore() {
   });
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-accent/10 pb-20 lg:pb-8">
-      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6">
-        <div className="flex items-center gap-3 mb-6">
-          <Button
-            variant="ghost"
-            onClick={() => navigate(-1)}
-            size="icon"
-            className="rounded-xl hover:bg-primary/10 lg:hidden"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">Explore</h1>
-        </div>
+    <Layout showSearch={false}>
+      <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 lg:pb-6">
+        <h1 className="text-2xl font-bold mb-6">Explore</h1>
 
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -154,7 +144,6 @@ export default function Explore() {
           )}
         </div>
       </div>
-      <MobileNav />
-    </div>
+    </Layout>
   );
 }

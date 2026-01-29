@@ -1,5 +1,6 @@
 import { useSeoMeta } from '@unhead/react';
 import { useCurrentUser } from '@/hooks/useCurrentUser';
+import { useAuthor } from '@/hooks/useAuthor';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { useTheme } from '@/hooks/useTheme';
 import { Moon, Sun, Waves, Home as HomeIcon, Bell, Mail, Search, User, MessageCircle, Repeat2, Heart, ChevronDown } from 'lucide-react';
@@ -7,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Skeleton } from '@/components/ui/skeleton';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,13 +16,102 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useState } from 'react';
+import { useFeed } from '@/hooks/useFeed';
+import { useFollowing } from '@/hooks/useFollowing';
+import type { NostrEvent } from '@nostrify/nostrify';
+import { NoteContent } from '@/components/NoteContent';
+import { genUserName } from '@/lib/genUserName';
 
 type FeedType = 'following' | 'global' | 'trending';
+
+// Post component to display a single Nostr event
+function Post({ event }: { event: NostrEvent }) {
+  const author = useAuthor(event.pubkey);
+  const authorMetadata = author.data?.metadata;
+
+  // Format relative time
+  const getRelativeTime = (timestamp: number) => {
+    const now = Math.floor(Date.now() / 1000);
+    const diff = now - timestamp;
+
+    if (diff < 60) return 'just now';
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
+    return `${Math.floor(diff / 86400)}d ago`;
+  };
+
+  return (
+    <Card className="border-primary/10 bg-card/50 backdrop-blur-sm">
+      <CardHeader>
+        <div className="flex items-start gap-3">
+          <Avatar className="w-12 h-12 border-2 border-primary/20">
+            <AvatarImage src={authorMetadata?.picture} />
+            <AvatarFallback className="bg-primary/20 text-primary">
+              {(authorMetadata?.name || genUserName(event.pubkey)).charAt(0).toUpperCase()}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center gap-2">
+              <span className="font-semibold truncate">
+                {authorMetadata?.name || genUserName(event.pubkey)}
+              </span>
+              <span className="text-xs text-muted-foreground">
+                · {getRelativeTime(event.created_at)}
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground truncate">
+              {event.pubkey.slice(0, 8)}...{event.pubkey.slice(-4)}
+            </p>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words">
+          <NoteContent event={event} />
+        </div>
+        <div className="flex items-center gap-2 pt-3 border-t border-primary/10">
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="flex-1 gap-2 hover:bg-primary/10 hover:text-primary rounded-xl group"
+          >
+            <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">
+              {event.tags.filter(([t]) => t === 'e').length}
+            </span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="flex-1 gap-2 hover:bg-accent/10 hover:text-accent rounded-xl group"
+          >
+            <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">0</span>
+          </Button>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            className="flex-1 gap-2 hover:bg-red-500/10 hover:text-red-500 rounded-xl group"
+          >
+            <Heart className="w-4 h-4 group-hover:scale-110 transition-transform" />
+            <span className="text-sm font-medium">0</span>
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 const Home = () => {
   const { user, metadata } = useCurrentUser();
   const { theme, setTheme } = useTheme();
   const [feedType, setFeedType] = useState<FeedType>('following');
+
+  // Fetch following list
+  const { data: followingPubkeys = [] } = useFollowing(user?.pubkey);
+
+  // Fetch feed based on feed type
+  const { data: posts = [], isLoading } = useFeed(feedType, followingPubkeys);
 
   useSeoMeta({
     title: 'Home - Waveline',
@@ -184,60 +275,48 @@ const Home = () => {
             </DropdownMenu>
           </div>
 
-          {/* Feed Posts Placeholder */}
+          {/* Feed Posts */}
           <div className="space-y-4">
-            {[1, 2, 3].map((i) => (
-              <Card key={i} className="border-primary/10 bg-card/50 backdrop-blur-sm">
-                <CardHeader>
-                  <div className="flex items-start gap-3">
-                    <Avatar className="w-12 h-12 border-2 border-primary/20">
-                      <AvatarFallback className="bg-primary/20 text-primary">
-                        {String.fromCharCode(65 + i)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <span className="font-semibold">User {i}</span>
-                        <span className="text-xs text-muted-foreground">· 2h ago</span>
+            {isLoading ? (
+              // Loading skeletons
+              [...Array(3)].map((_, i) => (
+                <Card key={i} className="border-primary/10 bg-card/50 backdrop-blur-sm">
+                  <CardHeader>
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="w-12 h-12 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-24" />
                       </div>
-                      <p className="text-sm text-muted-foreground">npub1...</p>
                     </div>
-                  </div>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-foreground leading-relaxed mb-4">
-                    This is a sample post in the Waveline feed. The ocean-inspired design creates 
-                    a calm and immersive social experience. 🌊
-                  </p>
-                  <div className="flex items-center gap-2 pt-3 border-t border-primary/10">
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="flex-1 gap-2 hover:bg-primary/10 hover:text-primary rounded-xl group"
-                    >
-                      <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                      <span className="text-sm font-medium">{Math.floor(Math.random() * 20)}</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="flex-1 gap-2 hover:bg-accent/10 hover:text-accent rounded-xl group"
-                    >
-                      <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                      <span className="text-sm font-medium">{Math.floor(Math.random() * 50)}</span>
-                    </Button>
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      className="flex-1 gap-2 hover:bg-red-500/10 hover:text-red-500 rounded-xl group"
-                    >
-                      <Heart className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                      <span className="text-sm font-medium">{Math.floor(Math.random() * 100)}</span>
-                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-5/6" />
+                      <Skeleton className="h-4 w-4/6" />
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : posts.length === 0 ? (
+              // Empty state
+              <Card className="border-dashed border-primary/20">
+                <CardContent className="py-12 px-8 text-center">
+                  <div className="max-w-sm mx-auto space-y-4">
+                    <Waves className="w-12 h-12 mx-auto text-muted-foreground opacity-50" />
+                    <p className="text-muted-foreground">
+                      {feedType === 'following' 
+                        ? "No posts from people you follow yet. Try switching to the Global feed or follow some users!"
+                        : "No posts found. The ocean is quiet right now. 🌊"}
+                    </p>
                   </div>
                 </CardContent>
               </Card>
-            ))}
+            ) : (
+              // Display posts
+              posts.map((event) => <Post key={event.id} event={event} />)
+            )}
           </div>
         </div>
       </main>

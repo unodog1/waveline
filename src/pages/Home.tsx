@@ -161,7 +161,7 @@ function Post({ event }: { event: NostrEvent }) {
           {/* Reply Button */}
           <button 
             onClick={handleReply}
-            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/10 hover:from-primary/30 hover:to-primary/20 text-primary hover:text-primary transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border border-primary/20"
+            className="flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 text-accent hover:text-accent transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border border-accent/20"
           >
             <MessageCircle className="w-5 h-5 group-hover/btn:scale-110 group-hover/btn:-rotate-12 transition-all duration-200" strokeWidth={2.5} />
             <span className="text-sm font-bold">
@@ -189,8 +189,8 @@ function Post({ event }: { event: NostrEvent }) {
             disabled={isLiked}
             className={`flex-1 flex items-center justify-center gap-2 h-11 rounded-2xl transition-all duration-200 group/btn font-bold shadow-sm hover:shadow-md hover:scale-[1.02] border ${
               isLiked 
-                ? 'bg-gradient-to-br from-red-500/30 to-red-500/20 text-red-500 cursor-not-allowed border-red-500/30' 
-                : 'bg-gradient-to-br from-red-500/20 to-red-500/10 hover:from-red-500/30 hover:to-red-500/20 text-red-500 hover:text-red-500 border-red-500/20'
+                ? 'bg-gradient-to-br from-accent/30 to-accent/20 text-accent cursor-not-allowed border-accent/30' 
+                : 'bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 text-accent hover:text-accent border-accent/20'
             }`}
           >
             <Heart className={`w-5 h-5 group-hover/btn:scale-125 transition-all duration-200 ${isLiked ? 'fill-current' : ''}`} strokeWidth={2.5} />
@@ -198,10 +198,10 @@ function Post({ event }: { event: NostrEvent }) {
           </button>
 
           {/* Zap Button */}
-          <div className="flex-1 flex items-center justify-center h-11 rounded-2xl bg-gradient-to-br from-yellow-500/20 to-yellow-500/10 hover:from-yellow-500/30 hover:to-yellow-500/20 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] border border-yellow-500/20">
+          <div className="flex-1 flex items-center justify-center h-11 rounded-2xl bg-gradient-to-br from-accent/20 to-accent/10 hover:from-accent/30 hover:to-accent/20 transition-all duration-200 shadow-sm hover:shadow-md hover:scale-[1.02] border border-accent/20">
             <ZapButton 
               target={event as any} 
-              className="flex items-center justify-center gap-2 text-yellow-600 dark:text-yellow-500 hover:text-yellow-500 transition-colors duration-200 w-full h-full group/btn font-bold"
+              className="flex items-center justify-center gap-2 text-accent hover:text-accent transition-colors duration-200 w-full h-full group/btn font-bold"
               showCount={true}
             />
           </div>

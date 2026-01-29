@@ -81,6 +81,10 @@ export function Post({ event: rawEvent, showThread = true, isMainPost = false }:
     enabled: !!quotedEventId,
   });
 
+  // Get quoted event author separately to avoid conditional hook calls
+  const quotedAuthor = useAuthor(quotedEvent?.pubkey || '');
+  const quotedAuthorMetadata = quotedAuthor.data?.metadata;
+
   // Extract URLs from content
   const extractUrls = (text: string): string[] => {
     const urlRegex = /(https?:\/\/[^\s]+)/g;
@@ -302,14 +306,14 @@ export function Post({ event: rawEvent, showThread = true, isMainPost = false }:
               <CardContent className="pt-4">
                 <div className="flex gap-3 mb-2">
                   <Avatar className="w-8 h-8 ring-1 ring-primary/20">
-                    <AvatarImage src={useAuthor(quotedEvent.pubkey).data?.metadata?.picture} />
+                    <AvatarImage src={quotedAuthorMetadata?.picture} />
                     <AvatarFallback className="bg-gradient-to-br from-primary/30 to-accent/30 text-primary font-semibold text-xs">
-                      {(useAuthor(quotedEvent.pubkey).data?.metadata?.name || genUserName(quotedEvent.pubkey)).charAt(0).toUpperCase()}
+                      {(quotedAuthorMetadata?.name || genUserName(quotedEvent.pubkey)).charAt(0).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex-1 min-w-0">
                     <p className="font-bold text-xs truncate">
-                      {useAuthor(quotedEvent.pubkey).data?.metadata?.name || genUserName(quotedEvent.pubkey)}
+                      {quotedAuthorMetadata?.name || genUserName(quotedEvent.pubkey)}
                     </p>
                   </div>
                 </div>

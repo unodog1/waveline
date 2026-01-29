@@ -1,16 +1,14 @@
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
-import { useMuteList } from '@/hooks/useMuteList';
 import type { NostrEvent } from '@nostrify/nostrify';
 
 type FeedType = 'following' | 'global' | 'trending';
 
 export function useFeed(feedType: FeedType, followingPubkeys?: string[]) {
   const { nostr } = useNostr();
-  const { muteList } = useMuteList();
 
   return useQuery({
-    queryKey: ['feed', feedType, followingPubkeys, muteList.pubkeys],
+    queryKey: ['feed', feedType, followingPubkeys],
     queryFn: async () => {
       let events: NostrEvent[];
 
@@ -40,22 +38,6 @@ export function useFeed(feedType: FeedType, followingPubkeys?: string[]) {
           },
         ]);
       }
-
-      // Filter out muted users
-      events = events.filter((event) => {
-        // For reposts (kind 6), check both the reposter and the original author
-        if (event.kind === 6) {
-          if (muteList.pubkeys.includes(event.pubkey)) return false;
-          try {
-            const repostedEvent = JSON.parse(event.content);
-            if (muteList.pubkeys.includes(repostedEvent.pubkey)) return false;
-          } catch (e) {
-            // If can't parse, filter it out to be safe
-            return false;
-          }
-        }
-        return !muteList.pubkeys.includes(event.pubkey);
-      });
 
       // Sort by created_at descending (newest first)
       return events.sort((a, b) => b.created_at - a.created_at);

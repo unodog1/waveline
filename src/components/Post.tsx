@@ -5,12 +5,11 @@ import { useAuthor } from '@/hooks/useAuthor';
 import { useNostr } from '@nostrify/react';
 import { useQuery } from '@tanstack/react-query';
 import { useNostrPublish } from '@/hooks/useNostrPublish';
-import { useMuteList } from '@/hooks/useMuteList';
 import { useToast } from '@/hooks/useToast';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { MessageCircle, Repeat2, Heart, MoreHorizontal, VolumeX, Volume2 } from 'lucide-react';
+import { MessageCircle, Repeat2, Heart } from 'lucide-react';
 import { ZapButton } from '@/components/ZapButton';
 import { ReplyDialog } from '@/components/ReplyDialog';
 import { QuotePostDialog } from '@/components/QuotePostDialog';
@@ -23,7 +22,6 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-  DropdownMenuSeparator,
 } from '@/components/ui/dropdown-menu';
 import { nip19 } from 'nostr-tools';
 import type { NostrEvent } from '@nostrify/nostrify';
@@ -39,14 +37,12 @@ export function Post({ event: rawEvent, showThread = true, isMainPost = false }:
   const { nostr } = useNostr();
   const { user } = useCurrentUser();
   const { mutate: publishEvent } = useNostrPublish();
-  const { isMuted, toggleMute } = useMuteList();
   const { toast } = useToast();
   const [isLiked, setIsLiked] = useState(false);
   const [isReposted, setIsReposted] = useState(false);
   const [replyDialogOpen, setReplyDialogOpen] = useState(false);
   const [quoteDialogOpen, setQuoteDialogOpen] = useState(false);
   const [repostMenuOpen, setRepostMenuOpen] = useState(false);
-  const [moreMenuOpen, setMoreMenuOpen] = useState(false);
 
   // Check if this is a repost (kind 6)
   const isRepost = rawEvent.kind === 6;
@@ -185,20 +181,6 @@ export function Post({ event: rawEvent, showThread = true, isMainPost = false }:
     );
   };
 
-  const handleMuteToggle = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (!user) {
-      toast({ title: 'Please log in to mute', variant: 'destructive' });
-      return;
-    }
-    toggleMute(event.pubkey);
-    setMoreMenuOpen(false);
-    toast({ 
-      title: isMuted(event.pubkey) ? '🔊 User unmuted' : '🔇 User muted',
-      description: isMuted(event.pubkey) ? 'You will now see their posts' : 'You will no longer see their posts'
-    });
-  };
-
   return (
     <>
       <ReplyDialog event={event} open={replyDialogOpen} onOpenChange={setReplyDialogOpen} />
@@ -249,38 +231,6 @@ export function Post({ event: rawEvent, showThread = true, isMainPost = false }:
                 </span>
               </div>
             </div>
-            {user && user.pubkey !== event.pubkey && (
-              <DropdownMenu open={moreMenuOpen} onOpenChange={setMoreMenuOpen}>
-                <DropdownMenuTrigger asChild>
-                  <Button 
-                    variant="ghost" 
-                    size="icon"
-                    className="h-8 w-8 rounded-full hover:bg-primary/10"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MoreHorizontal className="w-4 h-4" />
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-48 rounded-2xl border-primary/20 bg-background/95 backdrop-blur-xl">
-                  <DropdownMenuItem 
-                    onClick={handleMuteToggle}
-                    className="cursor-pointer rounded-xl font-semibold"
-                  >
-                    {isMuted(event.pubkey) ? (
-                      <>
-                        <Volume2 className="w-4 h-4 mr-2" />
-                        Unmute User
-                      </>
-                    ) : (
-                      <>
-                        <VolumeX className="w-4 h-4 mr-2" />
-                        Mute User
-                      </>
-                    )}
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            )}
           </div>
         </CardHeader>
 

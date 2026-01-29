@@ -41,60 +41,60 @@ function Post({ event }: { event: NostrEvent }) {
   };
 
   return (
-    <Card className="border-primary/10 bg-card/50 backdrop-blur-sm">
-      <CardHeader>
+    <Card className="border-primary/10 bg-card/50 backdrop-blur-sm hover:bg-card/60 transition-all duration-300 group overflow-hidden">
+      <CardHeader className="pb-3">
         <div className="flex items-start gap-3">
-          <Avatar className="w-12 h-12 border-2 border-primary/20">
+          <Avatar className="w-12 h-12 ring-2 ring-primary/20 ring-offset-2 ring-offset-background transition-all duration-300 group-hover:ring-primary/40">
             <AvatarImage src={authorMetadata?.picture} />
-            <AvatarFallback className="bg-primary/20 text-primary">
+            <AvatarFallback className="bg-gradient-to-br from-primary/30 to-accent/30 text-primary font-semibold">
               {(authorMetadata?.name || genUserName(event.pubkey)).charAt(0).toUpperCase()}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <span className="font-semibold truncate">
+              <span className="font-bold truncate bg-gradient-to-r from-foreground to-foreground/80 bg-clip-text">
                 {authorMetadata?.name || genUserName(event.pubkey)}
               </span>
-              <span className="text-xs text-muted-foreground">
-                · {getRelativeTime(event.created_at)}
+              <span className="text-xs text-muted-foreground font-medium">
+                {getRelativeTime(event.created_at)}
               </span>
             </div>
-            <p className="text-sm text-muted-foreground truncate">
+            <p className="text-xs text-muted-foreground/80 truncate font-mono">
               {event.pubkey.slice(0, 8)}...{event.pubkey.slice(-4)}
             </p>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words">
+      <CardContent className="pt-0">
+        <div className="text-foreground leading-relaxed mb-4 whitespace-pre-wrap break-words text-[15px]">
           <NoteContent event={event} />
         </div>
-        <div className="flex items-center gap-2 pt-3 border-t border-primary/10">
+        <div className="flex items-center gap-1 pt-3 border-t border-primary/10">
           <Button 
             variant="ghost" 
             size="sm"
-            className="flex-1 gap-2 hover:bg-primary/10 hover:text-primary rounded-xl group"
+            className="flex-1 gap-2 hover:bg-primary/10 hover:text-primary rounded-2xl h-10 group/btn transition-all duration-200"
           >
-            <MessageCircle className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">
+            <MessageCircle className="w-[18px] h-[18px] group-hover/btn:scale-110 group-hover/btn:-rotate-12 transition-all duration-200" strokeWidth={2} />
+            <span className="text-sm font-semibold">
               {event.tags.filter(([t]) => t === 'e').length}
             </span>
           </Button>
           <Button 
             variant="ghost" 
             size="sm"
-            className="flex-1 gap-2 hover:bg-accent/10 hover:text-accent rounded-xl group"
+            className="flex-1 gap-2 hover:bg-accent/10 hover:text-accent rounded-2xl h-10 group/btn transition-all duration-200"
           >
-            <Repeat2 className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">0</span>
+            <Repeat2 className="w-[18px] h-[18px] group-hover/btn:scale-110 group-hover/btn:rotate-90 transition-all duration-200" strokeWidth={2} />
+            <span className="text-sm font-semibold">0</span>
           </Button>
           <Button 
             variant="ghost" 
             size="sm"
-            className="flex-1 gap-2 hover:bg-red-500/10 hover:text-red-500 rounded-xl group"
+            className="flex-1 gap-2 hover:bg-red-500/10 hover:text-red-500 rounded-2xl h-10 group/btn transition-all duration-200"
           >
-            <Heart className="w-4 h-4 group-hover:scale-110 transition-transform" />
-            <span className="text-sm font-medium">0</span>
+            <Heart className="w-[18px] h-[18px] group-hover/btn:scale-125 group-hover/btn:fill-current transition-all duration-200" strokeWidth={2} />
+            <span className="text-sm font-semibold">0</span>
           </Button>
         </div>
       </CardContent>

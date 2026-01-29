@@ -8,6 +8,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { LoginArea } from '@/components/auth/LoginArea';
 import { ComposeDialog } from '@/components/ComposeDialog';
 import { MobileNav } from '@/components/MobileNav';
+import { RightSidebar } from '@/components/RightSidebar';
 import { 
   Moon, 
   Sun, 
@@ -31,9 +32,10 @@ import {
 interface LayoutProps {
   children: ReactNode;
   showSearch?: boolean;
+  showRightSidebar?: boolean;
 }
 
-export function Layout({ children, showSearch = true }: LayoutProps) {
+export function Layout({ children, showSearch = true, showRightSidebar = true }: LayoutProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, metadata } = useCurrentUser();
@@ -186,7 +188,7 @@ export function Layout({ children, showSearch = true }: LayoutProps) {
       </aside>
 
       {/* Main Content Area */}
-      <main className="lg:ml-72 min-h-screen">
+      <main className={`lg:ml-72 ${showRightSidebar ? 'xl:mr-80' : ''} min-h-screen`}>
         {/* Top Bar */}
         <header className="sticky top-0 z-10 border-b border-primary/10 bg-background/90 backdrop-blur-xl">
           <div className="flex items-center justify-between px-4 lg:px-6 py-3 lg:py-4">
@@ -198,8 +200,13 @@ export function Layout({ children, showSearch = true }: LayoutProps) {
               </span>
             </div>
 
-            {/* Search bar */}
-            {showSearch && (
+            {/* Centered title on larger screens when right sidebar is shown */}
+            <div className="hidden xl:flex flex-1 justify-center">
+              <h2 className="text-lg font-bold">Waveline</h2>
+            </div>
+
+            {/* Search bar - only show when no right sidebar */}
+            {showSearch && !showRightSidebar && (
               <div className="hidden sm:flex flex-1 max-w-xl lg:max-w-2xl">
                 <div className="relative w-full">
                   <SearchIcon className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
@@ -243,6 +250,9 @@ export function Layout({ children, showSearch = true }: LayoutProps) {
         {/* Page Content */}
         {children}
       </main>
+
+      {/* Right Sidebar - Desktop only */}
+      {showRightSidebar && <RightSidebar />}
 
       {/* Mobile Bottom Navigation */}
       <MobileNav />

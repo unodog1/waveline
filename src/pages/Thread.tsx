@@ -1,55 +1,42 @@
-import { useSeoMeta } from '@unhead/react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { useNostr } from '@nostrify/react';
-import { useQuery } from '@tanstack/react-query';
-import { useCurrentUser } from '@/hooks/useCurrentUser';
-import { useAuthor } from '@/hooks/useAuthor';
-import { useNostrPublish } from '@/hooks/useNostrPublish';
-import { useToast } from '@/hooks/useToast';
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Skeleton } from '@/components/ui/skeleton';
-import { ArrowLeft, MessageCircle, Repeat2, Heart, Zap } from 'lucide-react';
-import { NoteContent } from '@/components/NoteContent';
-import { genUserName } from '@/lib/genUserName';
-import { ZapButton } from '@/components/ZapButton';
-import { ReplyDialog } from '@/components/ReplyDialog';
-import { Layout } from '@/components/Layout';
-import { nip19 } from 'nostr-tools';
-import type { NostrEvent } from '@nostrify/nostrify';
-import { useState } from 'react';
-
-function PostCard({ event, isMainPost = false }: { event: NostrEvent; isMainPost?: boolean }) {
-  const navigate = useNavigate();
-  const { user } = useCurrentUser();
-  const author = useAuthor(event.pubkey);
-  const authorMetadata = author.data?.metadata;
-  const { mutate: publishEvent } = useNostrPublish();
-  const { toast } = useToast();
-  const [isLiked, setIsLiked] = useState(false);
-  const [isReposted, setIsReposted] = useState(false);
-  const [replyDialogOpen, setReplyDialogOpen] = useState(false);
-
-  const getRelativeTime = (timestamp: number) => {
-    const now = Math.floor(Date.now() / 1000);
-    const diff = now - timestamp;
-    if (diff < 60) return 'just now';
-    if (diff < 3600) return `${Math.floor(diff / 60)}m`;
-    if (diff < 86400) return `${Math.floor(diff / 3600)}h`;
-    return `${Math.floor(diff / 86400)}d`;
-  };
-
-  const handleProfileClick = () => {
-    const npub = nip19.npubEncode(event.pubkey);
-    navigate(`/profile/${npub}`);
-  };
-
-  const handleReply = () => {
-    if (!user) {
-      toast({ title: 'Please log in to reply', variant: 'destructive' });
-      return;
-    }
+    {/* Feed Posts */}
+    <div className="space-y-4">
+      {isLoading ? (
+        [...Array(3)].map((_, i) => (
+          <Card key={i} className="border-primary/10 bg-card/50 backdrop-blur-sm animate-pulse">
+            <CardContent className="pt-6 space-y-3">
+              <div className="flex gap-3">
+                <Skeleton className="w-12 h-12 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-32" />
+                  <Skeleton className="h-3 w-24" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-5/6" />
+                <Skeleton className="h-4 w-4/6" />
+              </div>
+            </CardContent>
+          </Card>
+        ))
+      ) : posts.length === 0 ? (
+        <Card className="border-dashed border-primary/20">
+          <CardContent className="py-12 px-8 text-center">
+            <p className="text-muted-foreground">
+              {feedType === 'following' 
+                ? "No posts from people you follow yet. Try the Global feed or follow some users!"
+                : "No posts found. The ocean is quiet right now. 🌊"}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        posts.map((event) => (
+          <div key={event.id} className="animate-fade-in">
+            <Post event={event} />
+          </div>
+        ))
+      )}
+    </div>
     setReplyDialogOpen(true);
   };
 
@@ -229,14 +216,16 @@ export default function Thread() {
 
   if (!eventId) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-background via-primary/5 to-accent/10">
-        <p className="text-muted-foreground">Invalid thread</p>
-      </div>
+      <Layout showSearch={false} showRightSidebar={false}>
+        <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+          <p className="text-muted-foreground">Invalid thread</p>
+        </div>
+      </Layout>
     );
   }
 
   return (
-    <Layout showSearch={false}>
+    <Layout showSearch={false} showRightSidebar={false}>
       <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 lg:pb-6 space-y-4">
         <Button
           variant="ghost"
@@ -248,7 +237,7 @@ export default function Thread() {
         </Button>
 
         {mainLoading ? (
-          <Card className="border-primary/10 bg-card/50">
+          <Card className="border-primary/10 bg-card/50 animate-pulse">
             <CardContent className="pt-6 space-y-3">
               <div className="flex gap-3">
                 <Skeleton className="w-12 h-12 rounded-full" />
@@ -261,7 +250,9 @@ export default function Thread() {
             </CardContent>
           </Card>
         ) : mainPost ? (
-          <PostCard event={mainPost} isMainPost={true} />
+          <div className="animate-fade-in">
+            <Post event={mainPost} showThread={false} isMainPost={true} />
+          </div>
         ) : (
           <Card className="border-primary/10 bg-card/50">
             <CardContent className="py-12 text-center">
@@ -271,12 +262,18 @@ export default function Thread() {
         )}
 
         {replies.length > 0 && (
-          <div className="space-y-4">
+          <div className="space-y-4 animate-fade-in" style={{ animationDelay: '0.1s' }}>
             <h3 className="text-lg font-bold px-2">
               Replies ({replies.length})
             </h3>
-            {replies.map((reply) => (
-              <PostCard key={reply.id} event={reply} />
+            {replies.map((reply, index) => (
+              <div 
+                key={reply.id}
+                className="animate-fade-in"
+                style={{ animationDelay: `${(index + 1) * 0.05}s` }}
+              >
+                <Post event={reply} showThread={false} />
+              </div>
             ))}
           </div>
         )}

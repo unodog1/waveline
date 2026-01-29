@@ -14,7 +14,7 @@ export default function Messages() {
 
   if (!user) {
     return (
-      <Layout showSearch={false}>
+      <Layout showSearch={false} showRightSidebar={false}>
         <div className="flex items-center justify-center min-h-[calc(100vh-200px)] px-4">
           <Card className="border-primary/10 bg-card/50 max-w-md w-full">
             <CardContent className="pt-6 text-center">
@@ -27,7 +27,7 @@ export default function Messages() {
   }
 
   return (
-    <Layout showSearch={false}>
+    <Layout showSearch={false} showRightSidebar={false}>
       <div className="h-[calc(100vh-60px)] lg:h-[calc(100vh-72px)] pb-16 lg:pb-0">
         <DMMessagingInterface className="h-full" />
       </div>

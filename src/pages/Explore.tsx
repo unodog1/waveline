@@ -98,7 +98,7 @@ export default function Explore() {
   });
 
   return (
-    <Layout showSearch={false}>
+    <Layout showSearch={false} showRightSidebar={false}>
       <div className="max-w-2xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 lg:pb-6">
         <h1 className="text-2xl font-bold mb-6">Explore</h1>
 

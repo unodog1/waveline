@@ -86,7 +86,7 @@ export default function Profile() {
   };
 
   return (
-    <Layout showSearch={false}>
+    <Layout showSearch={false} showRightSidebar={false}>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-8 pb-20 lg:pb-8">
         <Button
           variant="ghost"

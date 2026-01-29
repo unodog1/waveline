@@ -21,7 +21,7 @@ export default function Settings() {
 
   if (!user) {
     return (
-      <Layout showSearch={false}>
+      <Layout showSearch={false} showRightSidebar={false}>
         <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 lg:pb-6">
           <Card className="border-primary/10 bg-card/50">
             <CardContent className="pt-6 text-center">
@@ -34,7 +34,7 @@ export default function Settings() {
   }
 
   return (
-    <Layout showSearch={false}>
+    <Layout showSearch={false} showRightSidebar={false}>
       <div className="max-w-4xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 lg:pb-6">
         <h1 className="text-3xl font-bold mb-6">Settings</h1>
 

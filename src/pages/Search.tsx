@@ -206,7 +206,7 @@ export default function Search() {
   });
 
   return (
-    <Layout showSearch={false}>
+    <Layout showSearch={false} showRightSidebar={false}>
       <div className="max-w-3xl mx-auto px-3 sm:px-4 py-4 sm:py-6 pb-20 lg:pb-6">
         <div className="mb-6">
           <div className="relative">
